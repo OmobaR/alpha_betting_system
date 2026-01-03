@@ -1,0 +1,29 @@
+2026-01-02 19:45:18,944 - __main__ - INFO - Phase1FinalPipeline initialized
+2026-01-02 19:45:18,950 - __main__ - INFO - Starting pipeline for PL 2024
+2026-01-02 19:45:19,114 - __main__ - INFO - Exported to data/final_fixtures_PL_2024_20260102_194519.csv
+2026-01-02 19:45:19,117 - __main__ - INFO - Starting pipeline for LL 2024
+2026-01-02 19:45:19,280 - __main__ - INFO - Exported to data/final_fixtures_LL_2024_20260102_194519.csv
+2026-01-02 19:45:19,738 - __main__ - INFO - Starting pipeline for BL 2024
+2026-01-02 19:45:19,908 - __main__ - INFO - Exported to data/final_fixtures_BL_2024_20260102_194519.csv
+2026-01-02 20:21:55,322 - pipeline - INFO - Phase1FinalPipeline initialized
+2026-01-02 20:21:55,329 - pipeline - INFO - Starting pipeline for PL 2024
+2026-01-02 20:21:55,449 - pipeline - INFO - Exported to data/final_fixtures_PL_2024_20260102_202155.csv
+2026-01-02 20:21:55,457 - pipeline - INFO - Starting pipeline for LL 2024
+2026-01-02 20:21:55,561 - pipeline - INFO - Exported to data/final_fixtures_LL_2024_20260102_202155.csv
+2026-01-02 20:21:55,574 - pipeline - INFO - Starting pipeline for BL 2024
+2026-01-02 20:21:55,659 - pipeline - INFO - Exported to data/final_fixtures_BL_2024_20260102_202155.csv
+2026-01-02 22:02:00,161 - pipeline - INFO - Phase1FinalPipeline initialized
+2026-01-02 22:02:00,165 - pipeline - INFO - Starting pipeline for PL 2024
+2026-01-02 22:02:00,386 - pipeline - INFO - Exported to data/final_fixtures_PL_2024_20260102_220200.csv
+2026-01-02 22:02:00,403 - pipeline - INFO - Starting pipeline for LL 2024
+2026-01-02 22:02:00,664 - pipeline - INFO - Exported to data/final_fixtures_LL_2024_20260102_220200.csv
+2026-01-02 22:02:00,668 - pipeline - INFO - Starting pipeline for BL 2024
+2026-01-02 22:02:00,799 - pipeline - INFO - Exported to data/final_fixtures_BL_2024_20260102_220200.csv
+2026-01-02 22:02:06,073 - pipeline - INFO - Phase1FinalPipeline initialized
+2026-01-02 22:05:54,201 - pipeline - INFO - Phase1FinalPipeline initialized
+2026-01-02 22:05:54,206 - pipeline - INFO - Starting pipeline for PL 2024
+2026-01-02 22:05:54,325 - pipeline - INFO - Exported to data/final_fixtures_PL_2024_20260102_220554.csv
+2026-01-02 22:05:54,360 - pipeline - INFO - Starting pipeline for LL 2024
+2026-01-02 22:05:54,435 - pipeline - INFO - Exported to data/final_fixtures_LL_2024_20260102_220554.csv
+2026-01-02 22:05:54,439 - pipeline - INFO - Starting pipeline for BL 2024
+2026-01-02 22:05:54,515 - pipeline - INFO - Exported to data/final_fixtures_BL_2024_20260102_220554.csv

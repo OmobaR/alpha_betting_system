@@ -1,0 +1,64 @@
+ÿþ# Save the corrected content
+$correctedContent = @'
+["""
+Safe Adapter for the AlphaBetting Library.
+"""
+import sys
+import warnings
+from pathlib import Path
+from typing import Dict, List, Optional
+
+# Add AlphaBetting library to Python path
+ALPHA_LIB_PATH = Path(__file__).parent.parent.parent.parent / "alphabetting_library"
+sys.path.insert(0, str(ALPHA_LIB_PATH))
+
+try:
+    # Try to import from AlphaBetting
+    from src.download_fixtures import download_fixtures as _alpha_download
+    from src.feature_engineering import calculate_features as _alpha_calculate_features
+    ALPHABETTING_AVAILABLE = True
+    ALPHABETTING_VERSION = "1.0.0"
+except ImportError as e:
+    ALPHABETTING_AVAILABLE = False
+    ALPHABETTING_VERSION = "UNAVAILABLE"
+    warnings.warn(
+        f"AlphaBetting library not available at {ALPHA_LIB_PATH}. Error: {e}",
+        ImportWarning,
+        stacklevel=2
+    )
+    
+    # Create dummy functions
+    def _alpha_download(*args, **kwargs):
+        raise RuntimeError(f"AlphaBetting library not found at {ALPHA_LIB_PATH}")
+    
+    def _alpha_calculate_features(*args, **kwargs):
+        raise RuntimeError(f"AlphaBetting library not found.")
+
+class AlphaBettingAdapter:
+    def __init__(self, config: Optional[Dict] = None):
+        self.config = config or {}
+        if not ALPHABETTING_AVAILABLE:
+            raise RuntimeError(
+                "AlphaBetting library not accessible. "
+                f"Make sure it's cloned at: {ALPHA_LIB_PATH}"
+            )
+    
+    def fetch_fixtures(self, league: str, days_ahead: int = 7) -> List:
+        """Fetch fixtures using AlphaBetting library."""
+        if not ALPHABETTING_AVAILABLE:
+            return []
+        
+        # Call the AlphaBetting function
+        try:
+            fixtures = _alpha_download(league=league, days=days_ahead)
+            print(f"[Adapter] Fetched {len(fixtures) if fixtures else 0} fixtures for {league}")
+            return fixtures if fixtures else []
+        except Exception as e:
+            print(f"[Adapter] Error fetching fixtures: {e}")
+            return []
+
+# Singleton instance for easy import
+adapter = AlphaBettingAdapter() if ALPHABETTING_AVAILABLE else None]
+'@
+
+$correctedContent | Out-File -FilePath "src\data\alpha_adapter.py" -Encoding UTF8 -Force

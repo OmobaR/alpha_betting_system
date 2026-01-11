@@ -1,11 +1,26 @@
-﻿# Python virtual environments
+﻿# ===== SECURITY & LOCAL CONFIG (DO NOT COMMIT) =====
+# Environment variables with secrets (PASSWORDS, API KEYS)
+.env
+*.env.local
+.env.*.local
+
+# Docker override files (often contain local settings)
+docker-compose.override.yml
+
+# ===== PROJECT-SPECIFIC ARTIFACTS & BACKUPS =====
+backup_duplicates/
+encoding_backup/
+unnest_log.txt
+
+# ===== PYTHON =====
+# Virtual environments
 alphabetting_env/
 .venv/
 venv/
 env/
 ENV/
 
-# Python cache
+# Byte code, cache, and build artifacts
 __pycache__/
 *.py[cod]
 *$py.class
@@ -27,25 +42,55 @@ wheels/
 .installed.cfg
 *.egg
 
-# IDE
+# ===== IDE =====
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
 
-# System files
+# ===== SYSTEM FILES =====
 .DS_Store
-Thumbs.db
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+[Tt]humbs.db
+[Dd]esktop.ini
 
-# Logs (but keep directory structure)
-logs/*.log
+# ===== LOGS =====
+# Ignore the entire logs directory
+logs/
 
-# Data files (keep directory but exclude dbs)
-data/*.db
-data/*.db-journal
+# ===== DATA & DATABASES =====
+# Ignore raw & processed data directories (download these via scripts)
+data/
+# Alternative: Ignore specific file types but keep directory structure
+# data/*.db
+# data/*.db-*
+# data/*.csv
+# data/*.json
+# data/processed/
 
-# Large files to track with Git LFS
-*.dll
+# SQLite and its supporting files
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# ===== DOCKER & CONTAINER DATA =====
+# Local Docker data (bind mounts, volumes)
+docker-data/
+
+# Docker's own ignore file (if you have one per directory)
+**/.dockerignore
+
+# ===== LARGE MODEL/BINARY FILES =====
+# (For future use with Git LFS if needed)
 *.pkl
 *.joblib
+*.h5
+*.model

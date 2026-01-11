@@ -1,0 +1,133 @@
+# config.yaml
+
+# General Settings
+project:
+  name: "AlphaBet; A Football Match Outcome Prediction"
+  author: "Anthony Arotolu"
+  version: "1.0"
+  random_state: 42
+  logging_level: INFO
+
+# Paths
+paths:
+  data_folder: "data/"               
+  fixtures_data: 'data/fixtures'      # Correctly set path for fixtures
+  models_folder: "models/"           
+  logs_folder: "logs/"               
+  processed_data: "data/processed/"  
+  predictions_output: "outputs/"     
+  config_file: "config.yaml"         
+  eda_notebook: "notebooks/eda.ipynb"
+  predictions_output: "outputs/"     
+
+# Data Source Selection
+data_source:
+  type: "fixtures"  # You can switch between 'fixtures' or 'leagues' here
+
+# Settings for "leagues" (football-data.co.uk)
+download_leagues:
+  start_season: 2015
+  end_season: 2024
+
+# Settings for "fixtures" (football-data.org)
+football_data_org:
+  api_key: "5596a856dfcc4de2865a148d668b9e2d"
+  competitions:
+    - 'PL'   # Premier League
+    - 'BL1'  # Bundesliga 1
+    # - 'PD'   # La Liga
+    # - 'CL'   # UEFA Champions League
+    # - 'EC'   # European Championship
+    # - 'SA'   # Italian Serie A  
+    # - 'FL1'  # French Ligue 1
+    # - 'ELC'  # England Championship
+    # - 'PPL'  # Portugal Primeira Liga
+    # - 'BSA'  # Campeonato Brasileiro Série A
+    # - 'DED'  # Eredivisie
+    # - 'CLI'  # Copa Libertadores
+    # Add more competitions if ...
+
+# Seasonal settings for fixtures (Aligned with leagues)
+fixtures_seasonal:
+  start_season: 2023  # Start season year
+  end_season: 2024    # End season year
+
+# Data Loading
+data_loading:
+  leagues:             
+    - "SpanishLaliga"
+    - "EnglishPremierLeague"
+    - "ItalianSerieA"
+    - "GermanBundesliga"
+    - "FrenchLigue1"
+  file_format: ".csv"    
+  date_format: "%d/%m/%Y"
+  drop_na_columns:       
+    - "HG"
+    - "AG"
+
+# Feature Engineering
+feature_engineering:
+  rolling_window_size: 5              
+  shift_match_points: 3               
+  elo_k_factor: 20                    
+  fillna_default: 0                   
+  additional_features:                
+    - "Adj_Home_Form"
+    - "Adj_Away_Form"
+    - "Expected_Home_Goals"
+    - "Expected_Away_Goals"
+
+# Model Training
+model_training:
+  train_test_split:
+    test_size: 0.2
+    stratify: True
+  scaling: True
+  smote: True
+  save_model: True
+  models:
+    Logistic_Regression:
+      max_iter: 3000
+      class_weight: "balanced"
+      solver: "saga"
+    Random_Forest:
+      n_estimators: 300
+      max_depth: 20
+      min_samples_split: 5
+    XGBoost:
+      n_estimators: 100
+      max_depth: 6
+      learning_rate: 0.1
+
+# Model Evaluation
+model_evaluation:
+  metrics:
+    - "accuracy"
+    - "precision"
+    - "recall"
+    - "f1_score"
+  cross_validation:
+    n_splits: 5
+    scoring: "f1_macro"
+
+# Model Ensembling
+model_ensembling:
+  type: "voting"
+  voting_type: "soft"
+  estimators:
+    - "Random_Forest"
+    - "XGBoost"
+    - "Logistic_Regression"
+
+# Prediction Settings
+prediction:
+  model_to_use: "Voting_Ensemble"
+  recent_performance_window: 3
+
+# Deployment
+deployment:
+  host: "0.0.0.0"
+  port: 5000
+  use_docker: False
+  docker_image: "football_prediction_image"

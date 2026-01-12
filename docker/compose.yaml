@@ -1,0 +1,45 @@
+﻿version: "3.8"
+
+services:
+  postgres-betting:
+    image: timescale/timescaledb:2.24.0-pg16
+    container_name: alphabetting_timescaledb
+    environment:
+      POSTGRES_DB: football_betting
+      POSTGRES_USER: betting_user
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-BettingSecure123!}
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_betting_data:/var/lib/postgresql/data
+      - ./postgres/01_schemas.sql:/docker-entrypoint-initdb.d/01_schemas.sql
+      - ./postgres/02_raw_tables.sql:/docker-entrypoint-initdb.d/02_raw_tables.sql
+      - ./postgres/03_public_views.sql:/docker-entrypoint-initdb.d/03_public_views.sql
+      - ./postgres/04_features.sql:/docker-entrypoint-initdb.d/04_features.sql
+      - ./postgres/05_monitoring.sql:/docker-entrypoint-initdb.d/05_monitoring.sql
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U betting_user -d football_betting"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: alphabetting_pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@alphabetting.com
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-AdminSecure123!}
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      postgres-betting:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres_betting_data:
+  pgadmin_data:

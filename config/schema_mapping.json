@@ -1,0 +1,99 @@
+{
+  "csv_to_raw_mapping": {
+    "Date": {
+      "target_column": "match_date",
+      "transform": "parse_date",
+      "required": true
+    },
+    "Div": {
+      "target_column": "league_external_code",
+      "transform": "identity",
+      "required": true
+    },
+    "HomeTeam": {
+      "target_column": "home_team_name",
+      "transform": "clean_team_name",
+      "required": true
+    },
+    "AwayTeam": {
+      "target_column": "away_team_name",
+      "transform": "clean_team_name",
+      "required": true
+    },
+    "FTHG": {
+      "target_column": "home_goals",
+      "transform": "parse_int",
+      "required": true
+    },
+    "FTAG": {
+      "target_column": "away_goals",
+      "transform": "parse_int",
+      "required": true
+    },
+    "FTR": {
+      "target_column": "result",
+      "transform": "parse_result",
+      "required": true
+    },
+    "HTHG": {
+      "target_column": "home_goals_ht",
+      "transform": "parse_int",
+      "required": false
+    },
+    "HTAG": {
+      "target_column": "away_goals_ht",
+      "transform": "parse_int",
+      "required": false
+    },
+    "HTR": {
+      "target_column": "half_time_result",
+      "transform": "parse_result",
+      "required": false
+    },
+    "Referee": {
+      "target_column": "referee",
+      "transform": "clean_string",
+      "required": false
+    },
+    "Attendance": {
+      "target_column": "attendance",
+      "transform": "parse_int",
+      "required": false
+    }
+  },
+  "odds_columns": [
+    "B365H",
+    "B365D",
+    "B365A",
+    "BWH",
+    "BWD",
+    "BWA",
+    "IWH",
+    "IWD",
+    "IWA",
+    "LBH",
+    "LBD",
+    "LBA",
+    "PSH",
+    "PSD",
+    "PSA",
+    "SOH",
+    "SOD",
+    "SOA",
+    "SBH",
+    "SBD",
+    "SBA",
+    "SJH",
+    "SJD",
+    "SJA",
+    "SYH",
+    "SYD",
+    "SYA",
+    "VCH",
+    "VCD",
+    "VCA",
+    "WHH",
+    "WHD",
+    "WHA"
+  ]
+}

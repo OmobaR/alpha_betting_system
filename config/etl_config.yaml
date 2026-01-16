@@ -1,0 +1,51 @@
+# AlphaBetting ETL Configuration
+football_data_co_uk:
+  raw_data_path: "F:/RawFootballData"
+  base_url: "https://www.football-data.co.uk"
+  leagues:
+    EPL:
+      code: "E0"
+      name: "English Premier League"
+      country: "England"
+      tier: 1
+    LaLiga:
+      code: "SP1"
+      name: "Spanish La Liga"
+      country: "Spain"
+      tier: 1
+    Bundesliga:
+      code: "D1"
+      name: "German Bundesliga"
+      country: "Germany"
+      tier: 1
+    SerieA:
+      code: "I1"
+      name: "Italian Serie A"
+      country: "Italy"
+      tier: 1
+    Ligue1:
+      code: "F1"
+      name: "French Ligue 1"
+      country: "France"
+      tier: 1
+
+seasons:
+  start: 2000  # 2000-2001 season
+  end: 2024    # 2023-2024 season
+
+database:
+  host: "localhost"
+  port: 5433
+  name: "football_betting"
+  user: "betting_user"
+  schema: "raw"
+  
+etl:
+  batch_size: 1000
+  retry_attempts: 3
+  retry_delay: 5  # seconds
+  log_level: "INFO"
+  
+checkpointing:
+  enabled: true
+  checkpoint_table: "monitoring.pipeline_checkpoints"

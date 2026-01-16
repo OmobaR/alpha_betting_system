@@ -1,0 +1,342 @@
+from datetime import datetime, date
+"""
+CSV Parser for football-data.co.uk files
+"""
+import pandas as pd
+import numpy as np
+import logging
+from pathlib import Path
+from typing import Dict, List, Optional, Tuple, Any
+from datetime import datetime
+import hashlib
+import re
+
+logger = logging.getLogger(__name__)
+
+class CSVParser:
+    """Parse football-data.co.uk CSV files into structured data"""
+    
+                # Comprehensive bookmaker codes
+                self.bookmaker_codes = {
+                    'B365': {'name': 'Bet365', 'tier': 1, 'category': 'sharp'},
+                    'BW': {'name': 'BetWin', 'tier': 2, 'category': 'soft'},
+                    'IW': {'name': 'Interwetten', 'tier': 1, 'category': 'sharp'},
+                    'LB': {'name': 'Ladbrokes', 'tier': 2, 'category': 'soft'},
+                    'PS': {'name': 'Pinnacle', 'tier': 1, 'category': 'sharp'},
+                    'WH': {'name': 'WilliamHill', 'tier': 2, 'category': 'soft'},
+                    'VC': {'name': 'BetVictor', 'tier': 2, 'category': 'soft'},
+                    'BS': {'name': 'Betsson', 'tier': 3, 'category': 'soft'},
+                    'GB': {'name': 'Gamebookers', 'tier': 3, 'category': 'soft'},
+                    'SJ': {'name': 'StanJames', 'tier': 3, 'category': 'soft'},
+                    'FD': {'name': 'Betfred', 'tier': 3, 'category': 'soft'},
+                    'SY': {'name': 'SkyBet', 'tier': 2, 'category': 'soft'},
+                    'PC': {'name': 'PaddyPower', 'tier': 2, 'category': 'soft'},
+                    'SO': {'name': 'SportingOdds', 'tier': 3, 'category': 'soft'},
+                    'SB': {'name': 'Sportingbet', 'tier': 3, 'category': 'soft'},
+                    'LD': {'name': 'Ladbrokes', 'tier': 2, 'category': 'soft'},
+                    'PH': {'name': 'PaddyPower', 'tier': 2, 'category': 'soft'},
+                    'IWB': {'name': 'Interwetten', 'tier': 1, 'category': 'sharp'},
+                    'PSH': {'name': 'Pinnacle', 'tier': 1, 'category': 'sharp'},
+                    'PSD': {'name': 'Pinnacle', 'tier': 1, 'category': 'sharp'},
+                    'PSA': {'name': 'Pinnacle', 'tier': 1, 'category': 'sharp'},
+                    'AvgH': {'name': 'Average', 'tier': 0, 'category': 'composite'},
+                    'AvgD': {'name': 'Average', 'tier': 0, 'category': 'composite'},
+                    'AvgA': {'name': 'Average', 'tier': 0, 'category': 'composite'},
+                    'BWH': {'name': 'BetWay', 'tier': 2, 'category': 'soft'},
+                    'BWD': {'name': 'BetWay', 'tier': 2, 'category': 'soft'},
+                    'BWA': {'name': 'BetWay', 'tier': 2, 'category': 'soft'},
+                }
+    def parse_file(self, file_path: Path, league_name: str, season: str) -> Tuple[List[Dict], Dict]:
+        # config is a dict with 'etl' key containing ETLConfig OBJECT
+        self.config = config
+        # Use OBJECT ATTRIBUTE access, not dict access
+        self.schema_mapping = config['etl'].schema_mapping['csv_to_raw_mapping']
+        self.odds_columns = config['etl'].schema_mapping.get('odds_columns', [])
+    
+        # Comprehensive bookmaker codes for historical data
+        self.bookmaker_codes = {
+            # Core bookmakers (present in most seasons)
+            'B365': {'name': 'Bet365', 'tier': 1, 'category': 'sharp'},
+            'BW': {'name': 'BetWin', 'tier': 2, 'category': 'soft'},
+            'IW': {'name': 'Interwetten', 'tier': 1, 'category': 'sharp'},
+            'LB': {'name': 'Ladbrokes', 'tier': 2, 'category': 'soft'},
+            'PS': {'name': 'Pinnacle', 'tier': 1, 'category': 'sharp'},
+            'WH': {'name': 'WilliamHill', 'tier': 2, 'category': 'soft'},
+            'VC': {'name': 'BetVictor', 'tier': 2, 'category': 'soft'},
+            'BS': {'name': 'Betsson', 'tier': 3, 'category': 'soft'},
+            'GB': {'name': 'Gamebookers', 'tier': 3, 'category': 'soft'},
+            
+            # Historical bookmakers (appear in specific periods)
+            'SJ': {'name': 'StanJames', 'tier': 3, 'category': 'soft'},
+            'FD': {'name': 'Betfred', 'tier': 3, 'category': 'soft'},
+            'SY': {'name': 'SkyBet', 'tier': 2, 'category': 'soft'},
+            'PC': {'name': 'PaddyPower', 'tier': 2, 'category': 'soft'},
+            'SO': {'name': 'SportingOdds', 'tier': 3, 'category': 'soft'},
+            'SB': {'name': 'Sportingbet', 'tier': 3, 'category': 'soft'},
+            'LD': {'name': 'Ladbrokes', 'tier': 2, 'category': 'soft'},
+            'PH': {'name': 'PaddyPower', 'tier': 2, 'category': 'soft'},
+            
+            # Asian bookmakers
+            'IWB': {'name': 'Interwetten', 'tier': 1, 'category': 'sharp'},
+            
+            # Exchange markets
+            'PSH': {'name': 'Pinnacle', 'tier': 1, 'category': 'sharp'},
+            'PSD': {'name': 'Pinnacle', 'tier': 1, 'category': 'sharp'},
+            'PSA': {'name': 'Pinnacle', 'tier': 1, 'category': 'sharp'},
+            
+            # Market composites
+            'AvgH': {'name': 'Average', 'tier': 0, 'category': 'composite'},
+            'AvgD': {'name': 'Average', 'tier': 0, 'category': 'composite'},
+            'AvgA': {'name': 'Average', 'tier': 0, 'category': 'composite'},
+            
+            # Regional bookmakers
+            'BWH': {'name': 'BetWay', 'tier': 2, 'category': 'soft'},
+            'BWD': {'name': 'BetWay', 'tier': 2, 'category': 'soft'},
+            'BWA': {'name': 'BetWay', 'tier': 2, 'category': 'soft'},
+        }
+    def parse_file(self, file_path: Path, league_name: str, season: str) -> Tuple[List[Dict], Dict]:
+        """
+        Parse a CSV file and extract matches and odds
+        
+        Returns:
+            Tuple of (matches, odds_snapshots) where:
+            - matches: List of match dictionaries
+            - odds_snapshots: Dictionary of odds data by bookmaker
+        """
+        if not file_path.exists():
+            logger.error(f"File not found: {file_path}")
+            return [], {}
+        
+        try:
+            # Try multiple encodings
+            for encoding in ['utf-8', 'latin-1', 'iso-8859-1']:
+                try:
+                    df = pd.read_csv(file_path, encoding=encoding)
+                    logger.debug(f"Successfully read {file_path} with {encoding} encoding")
+                    break
+                except UnicodeDecodeError:
+                    continue
+            else:
+                logger.error(f"Could not read {file_path} with any encoding")
+                return [], {}
+        
+        except Exception as e:
+            logger.error(f"Error reading CSV file {file_path}: {e}")
+            return [], {}
+        
+        # Standardize column names
+        df.columns = [col.strip() for col in df.columns]
+        
+        # Filter out rows with missing essential data
+        required_cols = ['Date', 'HomeTeam', 'AwayTeam']
+        df = df.dropna(subset=required_cols, how='any')
+        
+        if df.empty:
+            logger.warning(f"No valid data in {file_path}")
+            return [], {}
+        
+        matches = []
+        all_odds = {}
+        
+        for idx, row in df.iterrows():
+            try:
+                # Parse match data
+                match_data = self._parse_match_row(row, league_name, season)
+                if match_data:
+                    matches.append(match_data)
+                
+                # Parse odds data
+                odds_data = self._parse_odds_row(row, match_data['external_id'] if match_data else None)
+                if odds_data:
+                    all_odds.update(odds_data)
+                    
+            except Exception as e:
+                logger.warning(f"Error parsing row {idx} in {file_path}: {e}")
+                continue
+        
+        logger.info(f"Parsed {len(matches)} matches from {file_path}")
+        return matches, all_odds
+    
+    def _parse_match_row(self, row: pd.Series, league_name: str, season: str) -> Optional[Dict]:
+        """Parse a single row into match data"""
+        try:
+            # Parse date
+            date_str = str(row.get('Date', '')).strip()
+            if not date_str or date_str.lower() == 'nan':
+                return None
+            
+            match_date = self._parse_date(date_str)
+            if not match_date:
+                return None
+            
+            # Get league config - use OBJECT attribute access
+            etl_config = self.config['etl']  # This is ETLConfig object
+            league_config = etl_config.leagues.get(league_name)  # Returns LeagueConfig object
+            
+            if not league_config:
+                logger.error(f"League {league_name} not in config")
+                return None
+            
+            # Clean team names
+            home_team = self._clean_team_name(str(row.get('HomeTeam', '')).strip())
+            away_team = self._clean_team_name(str(row.get('AwayTeam', '')).strip())
+            
+            if not home_team or not away_team:
+                return None
+            
+            # Generate unique external ID
+            match_key = f"{league_config.code}_{season}_{home_team}_{away_team}_{match_date}"
+            external_id = hashlib.md5(match_key.encode()).hexdigest()
+            
+            # Parse goals
+            home_goals = self._parse_int(row.get('FTHG'))
+            away_goals = self._parse_int(row.get('FTAG'))
+            
+            # Parse result
+            result = self._parse_result(row.get('FTR'))
+            
+            # Parse half-time data
+            home_goals_ht = self._parse_int(row.get('HTHG'))
+            away_goals_ht = self._parse_int(row.get('HTAG'))
+            
+            # Build match dictionary
+            match_data = {
+                'external_id': external_id,
+                'source_system': 'football-data.co.uk',
+                'league_external_code': league_config.code,  # OBJECT attribute
+                'league_name': league_name,
+                'season': season,
+                'home_team_name': home_team,
+                'away_team_name': away_team,
+                'match_date': match_date,
+                'home_goals': home_goals,
+                'away_goals': away_goals,
+                'result': result,
+                'home_goals_ht': home_goals_ht,
+                'away_goals_ht': away_goals_ht,
+                'referee': str(row.get('Referee', '')).strip() or None,
+                'attendance': self._parse_int(row.get('Attendance')),
+                'matchday': self._parse_int(row.get('Matchday')),
+                'available_at': datetime.now().isoformat(),
+                'ingested_at': datetime.now().isoformat()
+            }
+            
+            return match_data
+            
+        except Exception as e:
+            logger.warning(f"Error parsing match row: {e}")
+            return None
+    
+    # Rest of the methods remain the same...
+
+    
+    def _parse_odds_row(self, row: pd.Series, fixture_external_id: str) -> dict:
+        """Parse ALL odds data from a row - COMPREHENSIVE VERSION"""
+        if not fixture_external_id:
+            return {}
+        
+        odds_snapshots = {}
+        
+        # Get all available bookmaker columns in this row
+        available_columns = [col for col in row.index if isinstance(col, str)]
+        
+        for odds_prefix, bookmaker_info in self.bookmaker_codes.items():
+            # Try different column naming patterns
+            patterns = [
+                f"{odds_prefix}H",
+                f"{odds_prefix}D",
+                f"{odds_prefix}A",
+                f"{odds_prefix}HH",
+                f"{odds_prefix}HD",
+                f"{odds_prefix}HA",
+                f"Max{odds_prefix}H",
+                f"Max{odds_prefix}D",
+                f"Max{odds_prefix}A",
+                f"Min{odds_prefix}H",
+                f"Min{odds_prefix}D",
+                f"Min{odds_prefix}A",
+            ]
+            
+            home_col = None
+            draw_col = None
+            away_col = None
+            
+            # Find which pattern exists in this CSV
+            for pattern in patterns:
+                if pattern in available_columns:
+                    if pattern.endswith('H'):
+                        home_col = pattern
+                    elif pattern.endswith('D'):
+                        draw_col = pattern
+                    elif pattern.endswith('A'):
+                        away_col = pattern
+            
+            # If we found at least the home odds column, try to parse
+            if home_col and home_col in row:
+                home_odds = self._parse_float(row.get(home_col))
+                draw_odds = self._parse_float(row.get(draw_col)) if draw_col else None
+                away_odds = self._parse_float(row.get(away_col)) if away_col else None
+                
+                # If draw_odds not found in pattern search, look for it directly
+                if draw_odds is None:
+                    draw_patterns = [f"{odds_prefix}D", f"{odds_prefix}HD", f"Max{odds_prefix}D", f"Min{odds_prefix}D"]
+                    for pattern in draw_patterns:
+                        if pattern in available_columns:
+                            draw_odds = self._parse_float(row.get(pattern))
+                            break
+                
+                # Same for away odds
+                if away_odds is None:
+                    away_patterns = [f"{odds_prefix}A", f"{odds_prefix}HA", f"Max{odds_prefix}A", f"Min{odds_prefix}A"]
+                    for pattern in away_patterns:
+                        if pattern in available_columns:
+                            away_odds = self._parse_float(row.get(pattern))
+                            break
+                
+                # Only create snapshot if we have all three odds
+                if home_odds and draw_odds and away_odds:
+                    snapshot_key = f"{bookmaker_info['name']}_{odds_prefix}_{fixture_external_id}"
+                    
+                    odds_data = {
+                        'fixture_external_id': fixture_external_id,
+                        'bookmaker_name': bookmaker_info['name'],
+                        'bookmaker_tier': bookmaker_info['tier'],
+                        'bookmaker_category': bookmaker_info['category'],
+                        'market_type': '1x2',
+                        'home_odds': home_odds,
+                        'draw_odds': draw_odds,
+                        'away_odds': away_odds,
+                        'snapshot_at': datetime.now().isoformat(),
+                        'is_closing_line': True,
+                        'available_at': datetime.now().isoformat()
+                    }
+                    
+                    odds_snapshots[snapshot_key] = odds_data
+        
+        # Also extract average/max/min odds if available
+        for prefix in ['Avg', 'Max', 'Min']:
+            home_col = f"{prefix}H"
+            draw_col = f"{prefix}D"
+            away_col = f"{prefix}A"
+            
+            if all(col in available_columns for col in [home_col, draw_col, away_col]):
+                home_odds = self._parse_float(row.get(home_col))
+                draw_odds = self._parse_float(row.get(draw_col))
+                away_odds = self._parse_float(row.get(away_col))
+                
+                if home_odds and draw_odds and away_odds:
+                    snapshot_key = f"{prefix}_{fixture_external_id}"
+                    
+                    odds_snapshots[snapshot_key] = {
+                        'fixture_external_id': fixture_external_id,
+                        'bookmaker_name': prefix,
+                        'market_type': '1x2',
+                        'home_odds': home_odds,
+                        'draw_odds': draw_odds,
+                        'away_odds': away_odds,
+                        'snapshot_at': datetime.now().isoformat(),
+                        'is_closing_line': True,
+                        'available_at': datetime.now().isoformat()
+                    }
+        
+        return odds_snapshots

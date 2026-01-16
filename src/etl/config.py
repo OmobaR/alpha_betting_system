@@ -1,0 +1,165 @@
+"""
+ETL Configuration Management
+"""
+import os
+import yaml
+import json
+from pathlib import Path
+from dataclasses import dataclass
+from typing import Dict, List, Optional
+
+@dataclass
+class DatabaseConfig:
+    host: str = "localhost"
+    port: int = 5433
+    name: str = "football_betting"
+    user: str = "betting_user"
+    password: Optional[str] = None
+    schema: str = "raw"
+    
+    @property
+    def connection_string(self) -> str:
+        """Get PostgreSQL connection string"""
+        if self.password:
+            return f"postgresql://{self.user}:{self.password}@{self.host}:{self.port}/{self.name}"
+        else:
+            # Try environment variable
+            password = os.getenv("POSTGRES_PASSWORD") or os.getenv("DB_PASSWORD")
+            if password:
+                return f"postgresql://{self.user}:{password}@{self.host}:{self.port}/{self.name}"
+            else:
+                # Default password (for development)
+                return f"postgresql://{self.user}:betting_password@{self.host}:{self.port}/{self.name}"
+
+@dataclass
+class LeagueConfig:
+    code: str
+    name: str
+    country: str
+    tier: int
+
+@dataclass
+class ETLConfig:
+    raw_data_path: Path
+    base_url: str = "https://www.football-data.co.uk"
+    seasons: List[str] = None
+    leagues: Dict[str, LeagueConfig] = None
+    schema_mapping: Dict = None
+    batch_size: int = 1000
+    retry_attempts: int = 3
+    retry_delay: int = 5
+    
+    def __post_init__(self):
+        if isinstance(self.raw_data_path, str):
+            self.raw_data_path = Path(self.raw_data_path)
+        
+        if self.seasons is None:
+            self.seasons = self._generate_seasons(2000, 2024)
+        
+        if self.leagues is None:
+            self.leagues = self._load_default_leagues()
+        
+        if self.schema_mapping is None:
+            self.schema_mapping = self._load_schema_mapping()
+    
+    def _generate_seasons(self, start_year: int, end_year: int) -> List[str]:
+        """Generate season strings like '2000-01', '2001-02', etc."""
+        seasons = []
+        for year in range(start_year, end_year):
+            season = f"{year}-{str(year + 1)[-2:]}"
+            seasons.append(season)
+        return seasons
+    
+    def _load_default_leagues(self) -> Dict[str, LeagueConfig]:
+        """Load default Big 5 European leagues"""
+        return {
+            "EPL": LeagueConfig(code="E0", name="English Premier League", country="England", tier=1),
+            "LaLiga": LeagueConfig(code="SP1", name="Spanish La Liga", country="Spain", tier=1),
+            "Bundesliga": LeagueConfig(code="D1", name="German Bundesliga", country="Germany", tier=1),
+            "SerieA": LeagueConfig(code="I1", name="Italian Serie A", country="Italy", tier=1),
+            "Ligue1": LeagueConfig(code="F1", name="French Ligue 1", country="France", tier=1),
+        }
+    
+    def _load_schema_mapping(self) -> Dict:
+        """Load schema mapping from JSON file"""
+        mapping_path = Path(__file__).parent.parent.parent / "config" / "schema_mapping.json"
+        if mapping_path.exists():
+            with open(mapping_path, 'r') as f:
+                return json.load(f)
+        return {}
+    
+    def get_league_file_path(self, league_name: str, season: str) -> Path:
+        """Get path for league CSV file"""
+        return self.raw_data_path / league_name / f"{season}.csv"
+    
+    def get_league_url(self, league_code: str, season: str) -> str:
+        """Get URL for downloading league CSV"""
+        # Convert season format: 2000-01 -> 0001
+        season_url = season[2:4] + season[5:7]
+        return f"{self.base_url}/mmz4281/{season_url}/{league_code}.csv"
+
+class ConfigManager:
+    """Singleton configuration manager"""
+    _instance = None
+    _config = None
+    
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super(ConfigManager, cls).__new__(cls)
+            cls._instance._load_config()
+        return cls._instance
+    
+    def _load_config(self):
+        """Load configuration from YAML file"""
+        config_path = Path(__file__).parent.parent.parent / "config" / "etl_config.yaml"
+        
+        if not config_path.exists():
+            # Create default config if file doesn't exist
+            self._config = self._create_default_config()
+            return
+        
+        with open(config_path, 'r') as f:
+            config_data = yaml.safe_load(f)
+        
+        # Load database config
+        db_config = DatabaseConfig(**config_data['database'])
+        
+        # Load ETL config
+        etl_config = ETLConfig(
+            raw_data_path=config_data['football_data_co_uk']['raw_data_path'],
+            base_url=config_data['football_data_co_uk']['base_url'],
+            seasons=[f"{year}-{str(year+1)[-2:]}" for year in 
+                    range(config_data['seasons']['start'], config_data['seasons']['end'])],
+            batch_size=config_data['etl']['batch_size'],
+            retry_attempts=config_data['etl']['retry_attempts'],
+            retry_delay=config_data['etl']['retry_delay']
+        )
+        
+        self._config = {
+            'database': db_config,
+            'etl': etl_config,
+            'checkpointing': config_data['checkpointing']
+        }
+    
+    def _create_default_config(self) -> Dict:
+        """Create default configuration"""
+        return {
+            'database': DatabaseConfig(),
+            'etl': ETLConfig(raw_data_path=Path("F:/RawFootballData")),
+            'checkpointing': {'enabled': True, 'checkpoint_table': 'monitoring.pipeline_checkpoints'}
+        }
+    
+    @property
+    def config(self) -> Dict:
+        return self._config
+    
+    @property
+    def database(self) -> DatabaseConfig:
+        return self._config['database']
+    
+    @property
+    def etl(self) -> ETLConfig:
+        return self._config['etl']
+
+# Global configuration instance
+config = ConfigManager().config
